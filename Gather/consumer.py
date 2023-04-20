@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     # Subscribe to topic
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    f = open(f'Records/output_{timestr}.txt', "a")
+    f = open(f'Records/output_{timestr}.json', "a")
     topic = "sensor-data"
     consumer.subscribe([topic], on_assign=reset_offset)
 
