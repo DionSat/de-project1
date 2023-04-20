@@ -1,4 +1,2 @@
-**/Output
-*.json
-**/Records
-*.log
+**/*.json
+**/*.log
