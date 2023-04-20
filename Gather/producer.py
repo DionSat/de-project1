@@ -47,11 +47,12 @@ if __name__ == '__main__':
 
     for i in data:
         count += 1
-        producer.poll(10)
+        #producer.poll(10)
+        #producer.flush()
         event_trip_id = i["EVENT_NO_TRIP"]
         sensor_d = json.dumps(i)
         producer.produce(topic, sensor_d, event_trip_id, callback=delivery_callback)
-        if count % 10000 == 0 and count != 0:
+        if count % 1000 == 0 and count != 0:
             # Clearing the Screen
             os.system('clear')
             producer.poll(10000)
