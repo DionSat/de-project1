@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import sys
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
@@ -30,6 +31,8 @@ if __name__ == '__main__':
             consumer.assign(partitions)
 
     # Subscribe to topic
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    f = open(f'Records/output_{timestr}', "a")
     topic = "sensor-data"
     consumer.subscribe([topic], on_assign=reset_offset)
 
@@ -46,11 +49,12 @@ if __name__ == '__main__':
                 print("ERROR: %s".format(msg.error()))
             else:
                 # Extract the (optional) key and value, and print.
-
+                f.write(msg.value().decode('utf-8'))
                 print("Consumed event from topic {topic}: key = {key:12} value = {value:12}".format(
                     topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
     except KeyboardInterrupt:
         pass
     finally:
         # Leave group and commit final offsets
+        f.close()
         consumer.close()
