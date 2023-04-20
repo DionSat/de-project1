@@ -35,6 +35,7 @@ if __name__ == '__main__':
     f = open(f'Records/output_{timestr}.json', "a")
     topic = "sensor-data"
     consumer.subscribe([topic], on_assign=reset_offset)
+    data = []
 
     # Poll for new messages from Kafka and print them.
     try:
