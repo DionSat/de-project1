@@ -3,7 +3,6 @@
 import time
 import sys
 import json
-import asyncio
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
@@ -33,34 +32,36 @@ if __name__ == '__main__':
             consumer.assign(partitions)
 
     # Subscribe to topic
-    timestr = time.strftime("%Y%m%d-%H%M")
+    """timestr = time.strftime("%Y%m%d-%H%M")
     #f = open(f'Records/output_{timestr}.json', "a")
-    f = open(f'Records/output_{timestr}.json', mode='w', encoding='utf-8')
+    f = open(f'Records/output_{timestr}.json', mode='w', encoding='utf-8')"""
     topic = "bread-crumbs"
     consumer.subscribe([topic], on_assign=reset_offset)
-    data = []
+    #data = []
+    #count = 0
 
     # Poll for new messages from Kafka and print them.
     try:
         while True:
-            msg = consumer.poll(0)
+            msg = consumer.poll(1.0)
             if msg is None:
                 # Initial message consumption may take up to
                 # `session.timeout.ms` for the consumer group to
                 # rebalance and start consuming
-                print("Waiting...")
-                f.seek(0)
+                #print("Waiting...")
+                """f.seek(0)
                 string_data = f'{data}'.replace("'", "")
-                print(string_data)
                 json_data = json.loads(string_data)
-                json.dump(json_data, f)
+                json.dump(json_data, f, indent = 4)
+                log = open(f'Logs/messages_{timestr}.log', mode='w', encoding='utf-8')
+                log.write(f'Total numbers of kafta messages: {count}')"""
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
                 # Extract the (optional) key and value, and print.
                 #f.write(msg.value().decode('utf-8'))
-                entry = msg.value().decode('utf-8')
-                data.append(entry)
+                #count += 1
+                #data.append(msg.value().decode('utf-8'))
                 print("Consumed event from topic {topic}: key = {key:12} value = {value:12}".format(
                     topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
     except KeyboardInterrupt:
