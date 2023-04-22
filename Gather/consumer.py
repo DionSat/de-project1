@@ -2,6 +2,8 @@
 
 import time
 import sys
+import json
+import asyncio
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
@@ -32,25 +34,33 @@ if __name__ == '__main__':
 
     # Subscribe to topic
     timestr = time.strftime("%Y%m%d-%H%M")
-    f = open(f'Records/output_{timestr}.json', "a")
-    topic = "sensor-data"
+    #f = open(f'Records/output_{timestr}.json', "a")
+    f = open(f'Records/output_{timestr}.json', mode='w', encoding='utf-8')
+    topic = "bread-crumbs"
     consumer.subscribe([topic], on_assign=reset_offset)
     data = []
 
     # Poll for new messages from Kafka and print them.
     try:
         while True:
-            msg = consumer.poll(1.0)
+            msg = consumer.poll(0)
             if msg is None:
                 # Initial message consumption may take up to
                 # `session.timeout.ms` for the consumer group to
                 # rebalance and start consuming
                 print("Waiting...")
+                f.seek(0)
+                string_data = f'{data}'.replace("'", "")
+                print(string_data)
+                json_data = json.loads(string_data)
+                json.dump(json_data, f)
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
                 # Extract the (optional) key and value, and print.
-                f.write(msg.value().decode('utf-8'))
+                #f.write(msg.value().decode('utf-8'))
+                entry = msg.value().decode('utf-8')
+                data.append(entry)
                 print("Consumed event from topic {topic}: key = {key:12} value = {value:12}".format(
                     topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
     except KeyboardInterrupt:
