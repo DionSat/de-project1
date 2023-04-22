@@ -2,7 +2,7 @@ import urllib.request
 from datetime import datetime
 import json
 import sys
-import zlib
+import time
 from random import choice
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
@@ -50,9 +50,8 @@ if __name__ == '__main__':
         count += 1
         event_trip_id = i["EVENT_NO_TRIP"]
         sensor_d = json.dumps(i)
-        z = zlib.compress(sensor_d)
-        producer.produce(topic, z, count, callback=delivery_callback)
-        if count % 1000 == 0 and count != 0:
+        producer.produce(topic, sensor_d, str(count), callback=delivery_callback)
+        if count % 10000 == 0 and count != 0:
             # Clearing the Screen
             os.system('clear')
             producer.poll(10000)
@@ -62,5 +61,6 @@ if __name__ == '__main__':
     # producer.poll(10000)
     # producer.flush()
     timestr = time.strftime("%Y%m%d-%H%M")
-    f = open(f'Logs/{timestr}.log', mode='w', encoding='utf-8')
-    f.write(f'Breadcrumbs all produced. There were: {count} sensor readings')
+    log = open(f"Logs/sensor_{timestr}.log", "w")
+    log.write(f"Breadcrumbs all produced. There were: {count} sensor readings")
+    log.close()
