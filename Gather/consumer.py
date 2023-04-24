@@ -32,13 +32,11 @@ if __name__ == '__main__':
             consumer.assign(partitions)
 
     # Subscribe to topic
-    """timestr = time.strftime("%Y%m%d-%H%M")
-    #f = open(f'Records/output_{timestr}.json', "a")
-    f = open(f'Records/output_{timestr}.json', mode='w', encoding='utf-8')"""
+    timestr = time.strftime("%Y%m%d-%H%M")
     topic = "bread-crumbs"
     consumer.subscribe([topic], on_assign=reset_offset)
-    #data = []
-    #count = 0
+    data = []
+    count = 0
 
     # Poll for new messages from Kafka and print them.
     try:
@@ -48,20 +46,19 @@ if __name__ == '__main__':
                 # Initial message consumption may take up to
                 # `session.timeout.ms` for the consumer group to
                 # rebalance and start consuming
-                #print("Waiting...")
-                """f.seek(0)
-                string_data = f'{data}'.replace("'", "")
-                json_data = json.loads(string_data)
-                json.dump(json_data, f, indent = 4)
+                print("Waiting...")
+                with open(f'Records/output_{timestr}.json', "w") as f:
+                    f.seek(0)
+                    f.truncate()
+                    f.write('\n'.join(data))
                 log = open(f'Logs/messages_{timestr}.log', mode='w', encoding='utf-8')
-                log.write(f'Total numbers of kafta messages: {count}')"""
+                log.write(f'Total numbers of kafta messages: {count}')
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
                 # Extract the (optional) key and value, and print.
-                #f.write(msg.value().decode('utf-8'))
-                #count += 1
-                #data.append(msg.value().decode('utf-8'))
+                count += 1
+                data.append(msg.value().decode('utf-8'))
                 print("Consumed event from topic {topic}: key = {key:12} value = {value:12}".format(
                     topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
     except KeyboardInterrupt:
