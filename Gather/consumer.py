@@ -51,8 +51,10 @@ if __name__ == '__main__':
                     f.seek(0)
                     f.truncate()
                     f.write('\n'.join(data))
-                log = open(f'Logs/messages_{timestr}.log', mode='w', encoding='utf-8')
-                log.write(f'Total numbers of kafta messages: {count}')
+                    f.close()
+                with open(f'Logs/messages_{timestr}.log', mode='w', encoding='utf-8') as log:
+                    log.write(f'Total numbers of kafta messages: {count}')
+                    log.close()
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
@@ -65,5 +67,4 @@ if __name__ == '__main__':
         pass
     finally:
         # Leave group and commit final offsets
-        f.close()
         consumer.close()
