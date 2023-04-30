@@ -37,6 +37,7 @@ if __name__ == '__main__':
     consumer.subscribe([topic], on_assign=reset_offset)
     data = []
     count = 0
+    prev_count = count
 
     # Poll for new messages from Kafka and print them.
     try:
@@ -47,11 +48,13 @@ if __name__ == '__main__':
                 # `session.timeout.ms` for the consumer group to
                 # rebalance and start consuming
                 print("Waiting...")
-                with open(f'Records/output_{timestr}.json', "w") as f:
-                    f.seek(0)
-                    f.truncate()
-                    f.write('\n'.join(data))
-                    f.close()
+                if count > prev_count:    # Check if any data count has changed
+                    with open(f'Records/output_{timestr}.json', "w") as f:
+                        f.seek(0)
+                        f.truncate()
+                        f.write('\n'.join(data))
+                        f.close()
+                        prev_count = count     # update the previous data count
                 with open(f'Logs/messages_{timestr}.log', mode='w', encoding='utf-8') as log:
                     log.write(f'Total numbers of kafta messages: {count}')
                     log.close()
