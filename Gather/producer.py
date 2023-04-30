@@ -1,8 +1,11 @@
+import requests
 import urllib.request
 from datetime import datetime
 import json
+import bigjson
 import sys
 import time
+import json_stream
 from random import choice
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
@@ -10,11 +13,11 @@ from confluent_kafka import Producer
 import os
 
 if __name__ == '__main__':
-    f = urllib.request.urlopen("http://www.psudataeng.com:8000/getBreadCrumbData")
-    data = json.load(f)
-    #with urllib.request.urlopen('http://www.psudataeng.com:8000/getBreadCrumbData') as f:
-        #data = f.read().decode('utf-8')
-    #print(data)
+    with urllib.request.urlopen("http://www.psudataeng.com:8000/getBreadCrumbData") as f:
+        try:
+            data = json.loads(f.read().decode('utf-8'))
+        except:
+            print("No Data")
 
     # Parse the command line.
     parser = ArgumentParser()
@@ -48,7 +51,6 @@ if __name__ == '__main__':
     count = 0
     for i in data:
         count += 1
-        event_trip_id = i["EVENT_NO_TRIP"]
         sensor_d = json.dumps(i)
         producer.produce(topic, sensor_d, str(count), callback=delivery_callback)
         if count % 10000 == 0 and count != 0:
