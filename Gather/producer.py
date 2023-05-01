@@ -53,7 +53,7 @@ if __name__ == '__main__':
         count += 1
         sensor_d = json.dumps(i)
         producer.produce(topic, sensor_d, str(count), callback=delivery_callback)
-        if count % 10000 == 0 and count != 0:
+        if count % 100000 == 0 and count != 0:
             # Clearing the Screen
             os.system('clear')
             producer.poll(10000)
