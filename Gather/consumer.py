@@ -8,7 +8,7 @@ from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
 
-def data_write(data, file, logfile) -> None:
+def data_write(data, file) -> None:
     """
     Store data in json files
     Return None
@@ -47,9 +47,7 @@ if __name__ == '__main__':
     timestr = time.strftime("%Y%m%d-%H%M")
     topic = "bread-crumbs"
     consumer.subscribe([topic], on_assign=reset_offset)
-    #data = []
     count = 0
-    #prev_count = count
     f = open(f'Records/output_{timestr}.json', 'a')
     log = open(f'Logs/messages_{timestr}.log', mode='w', encoding='utf-8')
 
@@ -62,23 +60,15 @@ if __name__ == '__main__':
                 # `session.timeout.ms` for the consumer group to
                 # rebalance and start consuming
                 print("Waiting...")
-                """if count > prev_count:    # Check if any data count has changed
-                    with open(f'Records/output_{timestr}.json', "w") as f:
-                        f.seek(0)
-                        f.truncate()
-                        f.write('\n'.join(data))
-                        f.close()
-                        prev_count = count     # update the previous data count
                 with open(f'Logs/messages_{timestr}.log', mode='w', encoding='utf-8') as log:
                     log.write(f'Total numbers of kafta messages: {count}')
-                    log.close()"""
+                    log.close()
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
                 # Extract the (optional) key and value, and print.
-                data_write(json.loads(msg.value().decode('utf-8')), f, log)
+                data_write(json.loads(msg.value().decode('utf-8')), f)
                 count += 1
-                #data.append(msg.value().decode('utf-8'))
                 print("Consumed event from topic {topic}: key = {key:12} value = {value:12}".format(
                     topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
     except KeyboardInterrupt:
