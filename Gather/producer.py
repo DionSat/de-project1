@@ -2,10 +2,8 @@ import requests
 import urllib.request
 from datetime import datetime
 import json
-import bigjson
 import sys
 import time
-import json_stream
 from random import choice
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
@@ -44,8 +42,6 @@ if __name__ == '__main__':
                 topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
 
     # Produce data by sending sensor data one by one.
-    #f = open("/home/dion/environments/output.json", "r")
-    #data = json.load(f)
     topic = "bread-crumbs"
 
     count = 0
@@ -53,7 +49,7 @@ if __name__ == '__main__':
         count += 1
         sensor_d = json.dumps(i)
         producer.produce(topic, sensor_d, str(count), callback=delivery_callback)
-        if count % 100000 == 0 and count != 0:
+        if count % 50000 == 0 and count != 0:
             # Clearing the Screen
             os.system('clear')
             producer.poll(10000)
