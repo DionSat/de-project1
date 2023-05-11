@@ -2,4 +2,5 @@
 **/*.log
 **/*.txt
 **/*.ini
-/__pycache__
+**/*.pyo
+**/*pyc
