@@ -1,6 +1,5 @@
 **/*.json
 **/*.log
-**/*.txt
 **/*.ini
 **/*.pyo
 **/*pyc
