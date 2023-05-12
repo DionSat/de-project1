@@ -163,45 +163,33 @@ def data_write(data, file) -> None:
     json.dump(data, file)
     file.write("\n")
 
-def insert_db(breadcrumbs_df, trip_df):
-    db = create_engine(conn_string)
-    conn = db.connect()
-
-    breadcrumbs_df.to_sql('BreadCrumbs', con=conn, if_exists='replace',
-          index=False)
-    trip_df.to_sql('Trip', con=conn, if_exists='replace',
-          index=False)
-    conn = psycopg2.connect(dbname="postgres", user="postgres", password="breadcrumb", host="localhost")
-    conn.autocommit = True
-    cursor = conn.cursor()
-
-    sql1 = '''select * from data;'''
-    cursor.execute(sql1)
-
-    # conn.commit()
-    conn.close()
-
 def create_db(breadcrumbs_df, trip_df):
     conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
 
     db = create_engine(conn_string)
     conn = db.connect()
 
-    breadcrumbs_df.to_sql('BreadCrumbs', con=conn, if_exists='replace',
+    breadcrumbs_df.to_sql('BreadCrumbs', con=conn, if_exists='append',
           index=False)
-    trip_df.to_sql('Trip', con=conn, if_exists='replace',
+    trip_df.to_sql('Trip', con=conn, if_exists='append',
           index=False)
     conn = psycopg2.connect(host="localhost", user="postgres", password = "breadcrumbs",database = "postgres")
     conn.autocommit = True
     cursor = conn.cursor()
 
-    #sql1 = '''select * from "BreadCrumbs";'''
-    #cursor.execute(sql1)
-    cursor.execute('ALTER TABLE "Trip" ADD PRIMARY KEY ("trip_id");')
-    cursor.execute('ALTER TABLE "BreadCrumbs" ADD CONSTRAINT "FK_trip" FOREIGN KEY("trip_id") REFERENCES "Trip"("trip_id");')
+    cursor.execute('SELECT count(*) from "BreadCrumbs";')
+    result = cursor.fetchone()
+    curr_bread = result[0]
 
-    # conn.commit()
+    cursor.execute('SELECT count(*) from "Trip";')
+    result = cursor.fetchone()
+    curr_trip = result[0]
+
+    print(curr_bread)
+    print(curr_trip)
+
     conn.close()
+    return curr_bread, curr_trip
 
 def drop_contraints():
     conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
@@ -216,6 +204,33 @@ def drop_contraints():
     cursor.execute('ALTER TABLE "BreadCrumbs" DROP CONSTRAINT "Trip_pkey";')
     cursor.execute('ALTER TABLE "Trip" DROP CONSTRAINT "FK_trip";')
 
+    cursor.execute('ALTER TABLE "Trip" ADD PRIMARY KEY ("trip_id");')
+    cursor.execute('ALTER TABLE "BreadCrumbs" ADD CONSTRAINT "FK_trip" FOREIGN KEY("trip_id") REFERENCES "Trip"("trip_id");')
+
     # conn.commit()
     conn.close()
+
+def db_rowcount():
+    conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
+
+    db = create_engine(conn_string)
+    conn = db.connect()
+
+    conn = psycopg2.connect(host="localhost", user="postgres", password = "breadcrumbs",database = "postgres")
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT count(*) from "BreadCrumbs";')
+    result = cursor.fetchone()
+    curr_bread = result[0]
+
+    cursor.execute('SELECT count(*) from "Trip";')
+    result = cursor.fetchone()
+    curr_trip = result[0]
+
+    print(curr_bread)
+    print(curr_trip)
+
+    conn.close()
+    return curr_bread, curr_trip
 

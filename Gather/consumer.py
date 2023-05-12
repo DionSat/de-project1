@@ -42,9 +42,11 @@ if __name__ == "__main__":
     count = 0
     prev_count = count
     data = []
-    #df = pd.DataFrame()
-    # f = open(f'Records/output_{timestr}.json', 'a')
-    log = open(f"Logs/messages_{timestr}.log", mode="w", encoding="utf-8")
+    count_inserts = 0
+    prev_bread = 0
+    prev_trip = 0
+    bread_count = 0
+    trip_count = 0
 
     # Poll for new messages from Kafka and print them.
     try:
@@ -61,14 +63,14 @@ if __name__ == "__main__":
                         df = data_helper.create_dataframe(df)    # Create the new columns the dataframe
                         data_helper.data_assertions(df)    # Test the assertions on the dataframe
                         bread_df, trip_df = data_helper.data_splitter(df)    # Split the dataframe into two dataframes
-                        #data_helper.drop_contraints()
-                        data_helper.create_db(bread_df, trip_df)
-                        #print(bread_df)
-                        #print(trip_df)
+                        prev_bread, prev_trip = data_helper.db_rowcount()
+                        bread_count, trip_count = data_helper.create_db(bread_df, trip_df)
                     prev_count = count
-                    """with open(f"Logs/messages_{timestr}.log", mode="w", encoding="utf-8") as log:
-                        log.write(f"Total numbers of kafta messages: {count}")
-                        log.close()"""
+                    bread_count = bread_count - prev_bread
+                    trip_count = trip_count - prev_trip
+                    with open(f"Logs/messages_{timestr}.log", mode="w", encoding="utf-8") as log:
+                        log.write(f"{bread_count} rows were inserted in the BreadCrumbs table. {trip_count} rows were inserted in the Trip table.")
+                        log.close()
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
