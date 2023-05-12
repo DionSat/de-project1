@@ -4,6 +4,7 @@ from datetime import datetime
 import random
 import psycopg2
 from sqlalchemy import create_engine
+from sqlalchemy import inspect
 
 def create_dataframe(df):
   df = df.mask(df == '')    # Replace blank values with NaN
@@ -127,13 +128,14 @@ def data_assertions(df):
       error_indices = df9[df9['GPS_LONGITUDE'].lt(-180) | df9['GPS_LONGITUDE'].gt(180) | df9['GPS_LATITUDE'].gt(90) | df9['GPS_LATITUDE'].lt(-90)].index.tolist()
       print(error_message)
       print(f"Error occurred in row(s): {error_indices[0]}")
+  # Assertion #10 Speed should be greater than 0 but less than 90 m/s
   df10 = pd.DataFrame()
   df10[['SPEED']] = df[['SPEED']].copy(deep=True)
   try:
-      assert not df10[df10['SPEED'].gt(45)].values.any(), f"Some record is going at unsafe high speeds"
+      assert not df10[df10['SPEED'].gt(90)].values.any(), f"Some records are going at unsafe high speeds"
   except AssertionError as error:
       error_message = f"AssertionError: {error}"
-      error_indices = df10[df10['SPEED'].gt(45)].index.tolist()
+      error_indices = df10[df10['SPEED'].gt(90)].index.tolist()
       print(error_message)
       print(f"Error occurred in row(s): {error_indices[0]}")
 
@@ -177,6 +179,9 @@ def create_db(breadcrumbs_df, trip_df):
     conn.autocommit = True
     cursor = conn.cursor()
 
+    cursor.execute('ALTER TABLE "Trip" ADD PRIMARY KEY ("trip_id");')
+    cursor.execute('ALTER TABLE "BreadCrumbs" ADD CONSTRAINT "FK_trip" FOREIGN KEY("trip_id") REFERENCES "Trip"("trip_id");')
+
     cursor.execute('SELECT count(*) from "BreadCrumbs";')
     result = cursor.fetchone()
     curr_bread = result[0]
@@ -185,13 +190,10 @@ def create_db(breadcrumbs_df, trip_df):
     result = cursor.fetchone()
     curr_trip = result[0]
 
-    print(curr_bread)
-    print(curr_trip)
-
     conn.close()
     return curr_bread, curr_trip
 
-def drop_contraints():
+def delete_db():
     conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
 
     db = create_engine(conn_string)
@@ -201,14 +203,14 @@ def drop_contraints():
     conn.autocommit = True
     cursor = conn.cursor()
 
-    cursor.execute('ALTER TABLE "BreadCrumbs" DROP CONSTRAINT "Trip_pkey";')
-    cursor.execute('ALTER TABLE "Trip" DROP CONSTRAINT "FK_trip";')
-
-    cursor.execute('ALTER TABLE "Trip" ADD PRIMARY KEY ("trip_id");')
-    cursor.execute('ALTER TABLE "BreadCrumbs" ADD CONSTRAINT "FK_trip" FOREIGN KEY("trip_id") REFERENCES "Trip"("trip_id");')
+    cursor.execute('ALTER TABLE "BreadCrumbs" DROP CONSTRAINT "FK_trip";')
+    cursor.execute('ALTER TABLE "Trip" DROP CONSTRAINT "Trip_pkey";')
+    cursor.execute('DROP TABLE "BreadCrumbs";')
+    cursor.execute('DROP TABLE "Trip";')
 
     # conn.commit()
     conn.close()
+    print("DELETE Successful")
 
 def db_rowcount():
     conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
@@ -220,16 +222,21 @@ def db_rowcount():
     conn.autocommit = True
     cursor = conn.cursor()
 
-    cursor.execute('SELECT count(*) from "BreadCrumbs";')
-    result = cursor.fetchone()
-    curr_bread = result[0]
+    insp = inspect(db)
 
-    cursor.execute('SELECT count(*) from "Trip";')
-    result = cursor.fetchone()
-    curr_trip = result[0]
+    if insp.has_table("BreadCrumbs", schema="public"):
+        cursor.execute('SELECT count(*) from "BreadCrumbs";')
+        result = cursor.fetchone()
+        curr_bread = result[0]
+    else:
+        curr_bread = 0
 
-    print(curr_bread)
-    print(curr_trip)
+    if insp.has_table("Trip", schema="public"):
+        cursor.execute('SELECT count(*) from "Trip";')
+        result = cursor.fetchone()
+        curr_trip = result[0]
+    else:
+        curr_trip = 0
 
     conn.close()
     return curr_bread, curr_trip

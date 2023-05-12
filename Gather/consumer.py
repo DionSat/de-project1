@@ -10,18 +10,21 @@ from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
 from datetime import datetime
+from loguru import logger
 
 if __name__ == "__main__":
     # Parse the command line.
     parser = ArgumentParser()
     parser.add_argument("config_file", type=FileType("r"))
     parser.add_argument("--reset", action="store_true")
+    parser.add_argument("-d", "--delete", action="store_true", help="Delete the tables in postgres")
     args = parser.parse_args()
 
     # Parse the configuration.
     # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
     config_parser = ConfigParser()
     config_parser.read_file(args.config_file)
+    #config_parser.read_file(args.config)
     config = dict(config_parser["default"])
     config.update(config_parser["consumer"])
 
@@ -48,8 +51,13 @@ if __name__ == "__main__":
     bread_count = 0
     trip_count = 0
 
+    # If delete table option
+    if args.delete:
+        data_helper.delete_db()
+
     # Poll for new messages from Kafka and print them.
     try:
+        logger.add(f"Logs/output_{timestr}.log")
         while True:
             msg = consumer.poll(1.0)
             if msg is None:
@@ -68,9 +76,11 @@ if __name__ == "__main__":
                     prev_count = count
                     bread_count = bread_count - prev_bread
                     trip_count = trip_count - prev_trip
-                    with open(f"Logs/messages_{timestr}.log", mode="w", encoding="utf-8") as log:
+                    logger.success(f"{bread_count} rows were inserted in the BreadCrumbs table. {trip_count} rows were inserted in the Trip table.")
+                    logger.success(f"Total consumed messages: {count}")
+                    """with open(f"Logs/messages_{timestr}.log", mode="w", encoding="utf-8") as log:
                         log.write(f"{bread_count} rows were inserted in the BreadCrumbs table. {trip_count} rows were inserted in the Trip table.")
-                        log.close()
+                        log.close()"""
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:

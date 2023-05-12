@@ -1,0 +1,8 @@
+black
+click
+confluent-kafka
+numpy
+pandas
+psycopg2-binary
+SQLAlchemy
+loguru
