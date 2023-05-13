@@ -5,6 +5,7 @@ import random
 import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy import inspect
+from loguru import logger
 
 def create_dataframe(df):
   df = df.mask(df == '')    # Replace blank values with NaN
@@ -165,27 +166,71 @@ def data_write(data, file) -> None:
     json.dump(data, file)
     file.write("\n")
 
+def insert_db(breadcrumbs_df, trip_df):
+    conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
+
+    db = create_engine(conn_string)
+    conn_engine = db.connect()
+
+    conn = psycopg2.connect(host="localhost", user="postgres", password = "breadcrumbs",database = "postgres")
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    # Create Temp table for trip
+    trip_df.to_sql('TempTrip', con=conn_engine, if_exists='replace', index=False)
+
+    # Insert TempTrip rows that are not present in Trip
+    cursor.execute("""INSERT INTO "Trip" ("trip_id", "route_id", "vehicle_id", "service_key", "direction")
+                      SELECT "trip_id", "route_id", "vehicle_id", "service_key", "direction"
+                      FROM "TempTrip" t
+                      WHERE NOT EXISTS 
+                          (SELECT 1 FROM "Trip" f
+                           WHERE t.trip_id = f.trip_id)""")
+
+    # Append to the BreadCrumbs table
+    breadcrumbs_df.to_sql('BreadCrumbs', con=conn_engine, if_exists='append',
+          index=False)
+
+    # Get the row count for BreadCrumbs table
+    cursor.execute('SELECT count(*) from "BreadCrumbs";')
+    result = cursor.fetchone()
+    curr_bread = result[0]
+
+    # Get the row count for Trip table
+    cursor.execute('SELECT count(*) from "Trip";')
+    result = cursor.fetchone()
+    curr_trip = result[0]
+
+    conn.close()
+    return curr_bread, curr_trip
+
 def create_db(breadcrumbs_df, trip_df):
     conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
 
     db = create_engine(conn_string)
     conn = db.connect()
 
-    breadcrumbs_df.to_sql('BreadCrumbs', con=conn, if_exists='append',
+    # Create new BreadCrumbs table
+    breadcrumbs_df.to_sql('BreadCrumbs', con=conn, if_exists='replace',
           index=False)
-    trip_df.to_sql('Trip', con=conn, if_exists='append',
+    # Create new Trip table
+    trip_df.to_sql('Trip', con=conn, if_exists='replace',
           index=False)
+
     conn = psycopg2.connect(host="localhost", user="postgres", password = "breadcrumbs",database = "postgres")
     conn.autocommit = True
     cursor = conn.cursor()
 
+    # Add Constraints
     cursor.execute('ALTER TABLE "Trip" ADD PRIMARY KEY ("trip_id");')
     cursor.execute('ALTER TABLE "BreadCrumbs" ADD CONSTRAINT "FK_trip" FOREIGN KEY("trip_id") REFERENCES "Trip"("trip_id");')
 
+    # Get the row count for BreadCrumbs table
     cursor.execute('SELECT count(*) from "BreadCrumbs";')
     result = cursor.fetchone()
     curr_bread = result[0]
 
+    # Get the row count for Trip table
     cursor.execute('SELECT count(*) from "Trip";')
     result = cursor.fetchone()
     curr_trip = result[0]
@@ -203,12 +248,12 @@ def delete_db():
     conn.autocommit = True
     cursor = conn.cursor()
 
+    # Drop constraints and then drop the tables
     cursor.execute('ALTER TABLE "BreadCrumbs" DROP CONSTRAINT "FK_trip";')
     cursor.execute('ALTER TABLE "Trip" DROP CONSTRAINT "Trip_pkey";')
     cursor.execute('DROP TABLE "BreadCrumbs";')
     cursor.execute('DROP TABLE "Trip";')
 
-    # conn.commit()
     conn.close()
     print("DELETE Successful")
 
@@ -224,6 +269,7 @@ def db_rowcount():
 
     insp = inspect(db)
 
+    # Check if BreadCrumbs table exists then get the row count
     if insp.has_table("BreadCrumbs", schema="public"):
         cursor.execute('SELECT count(*) from "BreadCrumbs";')
         result = cursor.fetchone()
@@ -231,6 +277,7 @@ def db_rowcount():
     else:
         curr_bread = 0
 
+    # Check if the Trip Table exists then get the row count
     if insp.has_table("Trip", schema="public"):
         cursor.execute('SELECT count(*) from "Trip";')
         result = cursor.fetchone()
@@ -241,3 +288,20 @@ def db_rowcount():
     conn.close()
     return curr_bread, curr_trip
 
+def check_tables():
+    conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
+
+    db = create_engine(conn_string)
+    conn = db.connect()
+
+    conn = psycopg2.connect(host="localhost", user="postgres", password = "breadcrumbs",database = "postgres")
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    insp = inspect(db)
+
+    # Check if BreadCrumbs table exists then get the row count
+    flag = insp.has_table("BreadCrumbs", schema="public") and insp.has_table("Trip", schema="public")
+
+    conn.close()
+    return flag

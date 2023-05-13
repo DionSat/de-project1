@@ -72,7 +72,10 @@ if __name__ == "__main__":
                         data_helper.data_assertions(df)    # Test the assertions on the dataframe
                         bread_df, trip_df = data_helper.data_splitter(df)    # Split the dataframe into two dataframes
                         prev_bread, prev_trip = data_helper.db_rowcount()
-                        bread_count, trip_count = data_helper.create_db(bread_df, trip_df)
+                        if data_helper.check_tables():
+                            bread_count, trip_count = data_helper.insert_db(bread_df, trip_df)
+                        else:
+                            bread_count, trip_count = data_helper.create_db(bread_df, trip_df)
                     prev_count = count
                     bread_count = bread_count - prev_bread
                     trip_count = trip_count - prev_trip
