@@ -2,7 +2,7 @@
 There are two scripts that we use for this project. The producer.py to produce/send messages to our datapipeline kafta client confluent. Confluent hold the message/records and then consumer.py consumes the messages to read them and process them. Currently the consumer process the messages into a dataframe and then asserts the data. Once that is done the dataframe is appended to a database.
 
 # To Run Script
-There are two ways to run the script by making it executable or running it through python3 in a virtual environment. Running it through a virtual environment would be recommended
+There are two ways to run the script by making it executable or running it through python3 in a virtual environment. Running it through a virtual environment would be recommended. You must also use your own confluent ini file.
 
 ## Make script executable chmod +x
 **Run:** ```./consumer {confluent configuration ini}```
