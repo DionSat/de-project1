@@ -16,3 +16,9 @@ To get the consumer working. A postgres database must be setup.
 Then in the data_helper.py change the conn_string on the delete_db(), create_db(), insert_db(), db_rowcount(), and check_tables() to match your current credentials. The credentials are in the 
 format: ```postgresql+psycopg2://user:password@host:5432/database```
 Also change the psycopg2.connect() to match the credentials
+
+# Usage
+```python3 consumer [-d] or [-h] {confluent configuration ini}```\
+```python3 producer {confluent configuration ini}```\
+```-h```: Help for usage \
+```-d```: delete tables before processing
