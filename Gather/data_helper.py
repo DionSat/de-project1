@@ -19,8 +19,10 @@ def create_dataframe(df):
 
   # Calculate the speed for each row using the formula
   # (current meters - previous meters) / (current ACT_TIME - previous ACT_TIME)
-  meters_diff = df['METERS'].diff()
-  time_diff = df['ACT_TIME'].diff()
+  meters_diff = df[['METERS', 'VEHICLE_ID']].groupby("VEHICLE_ID").diff()
+  time_diff = df[['ACT_TIME', 'VEHICLE_ID']].groupby("VEHICLE_ID").diff()
+  meters_diff = meters_diff['METERS']
+  time_diff = time_diff['ACT_TIME']
   df['SPEED'] = meters_diff / time_diff
 
   # Replace NaN and infinity values with 0
@@ -133,10 +135,10 @@ def data_assertions(df):
   df10 = pd.DataFrame()
   df10[['SPEED']] = df[['SPEED']].copy(deep=True)
   try:
-      assert not df10[df10['SPEED'].gt(90)].values.any(), f"Some records are going at unsafe high speeds"
+      assert not df10[df10['SPEED'].gt(45)].values.any(), f"Some records are going at unsafe high speeds"
   except AssertionError as error:
       error_message = f"AssertionError: {error}"
-      error_indices = df10[df10['SPEED'].gt(90)].index.tolist()
+      error_indices = df10[df10['SPEED'].gt(45)].index.tolist()
       print(error_message)
       print(f"Error occurred in row(s): {error_indices[0]}")
 
