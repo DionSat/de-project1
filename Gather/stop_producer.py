@@ -8,14 +8,70 @@ from random import choice
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer
+from bs4 import BeautifulSoup
+import re
 import os
 
+def process_data(soup):
+    trip_html = soup.find_all("h2")
+    table_html = soup.find_all("table")
+    # headers_html = soup.find_all("th")
+    data_dict ={}
+    stop_list = []
+    final_list =[]
+
+    # Get the list of headers and an additional trip_id header
+    table_soup = BeautifulSoup(str(table_html[0]), "html.parser")
+    header_html = table_soup.find_all("tr")
+    row_soup = BeautifulSoup(str(header_html[0]), "html.parser")
+    header_html = row_soup.find_all("th")
+    str_cells = str(header_html)
+    clean = re.compile('<.*?>')
+    clean2 = (re.sub(clean, '\"',str_cells))
+    header_res = json.loads(clean2)
+    header_res.append("trip_id")
+
+    # Get the list of trip IDs
+    str_cells = str(trip_html)
+    clean = re.compile('<.*?>')
+    clean2 = (re.sub(clean, '\"',str_cells))
+    trip_res = json.loads(clean2)
+    trip_ids = []
+    for id in trip_res:
+        res = re.sub('\D', '', id)
+        trip_ids.append(res)
+
+    # Create a list of the data rows with the trip ID added to the column
+    for idx, table in enumerate(soup.find_all("table")):
+        table_soup = BeautifulSoup(str(table), "html.parser")
+        row_html = table_soup.find_all("tr")
+        for row in row_html:
+            row_td = row.find_all('td')
+            str_cells = str(row_td)
+            clean = re.compile('<.*?>')
+            clean2 = (re.sub(clean, '\"',str_cells))
+            data_res = json.loads(clean2)
+            if len(data_res) != 0:
+                data_res.append(trip_ids[idx])
+                stop_list.append(data_res)
+
+    # Convert list of lists into list of json or dicts so it fits the previous data format of Breadcrumbs
+    for row in stop_list:
+        for i, data in enumerate(row):
+            data_dict[header_res[i]] = data
+        final_list.append(data_dict)
+        data_dict = {}
+
+    return final_list
+
 if __name__ == '__main__':
-    with urllib.request.urlopen("http://www.psudataeng.com:8000/getBreadCrumbData") as f:
+    with urllib.request.urlopen("http://www.psudataeng.com:8000/getStopEvents") as f:
         try:
-            data = json.loads(f.read().decode('utf-8'))
+            soup = BeautifulSoup(f, 'lxml')
         except:
             print("No Data")
+
+    data = process_data(soup)
 
     # Parse the command line.
     parser = ArgumentParser()
@@ -42,7 +98,7 @@ if __name__ == '__main__':
                 topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
 
     # Produce data by sending sensor data one by one.
-    topic = "bread-crumbs"
+    topic = "stop-event"
 
     count = 0
     for i in data:
