@@ -4,6 +4,9 @@ There are two scripts that we use for this project. The producer.py to produce/s
 # To Run Script
 There are two ways to run the script by making it executable or running it through python3 in a virtual environment. Running it through a virtual environment would be recommended. You must also use your own confluent ini file.
 
+# Install Dependencies
+```pip install -r requirements.txt```
+
 ## Make script executable chmod +x
 **Run:** ```./consumer {confluent configuration ini}```
 
