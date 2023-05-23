@@ -32,6 +32,13 @@ def create_dataframe(df):
   df['TIME_STAMP'] = (pd.to_datetime(df['OPD_DATE'], unit='s') + pd.to_timedelta(df['ACT_TIME'], unit='s'))
   return df
 
+def create_stop_dataframe(df):
+  df = df.mask(df == '')    # Replace blank values with NaN
+  df = df.astype({"DIRECTION":'int',
+                  "SERVICE_KEY":'char',
+                  "ROUTE_ID":'int'})    # Set type for important columns
+  # Find if uneeded columns exist. 
+  return df
 
 def data_assertions(df):
   # Assertion #1  If there is longitude, then there is latitude
@@ -142,6 +149,8 @@ def data_assertions(df):
       print(error_message)
       print(f"Error occurred in row(s): {error_indices[0]}")
 
+def stop_data_assertions(df):
+
 def data_splitter(df):
   breadcrumbs_df = df[['EVENT_NO_TRIP', 'TIME_STAMP', 'GPS_LATITUDE', 'GPS_LONGITUDE', 'SPEED']]
   breadcrumbs_df = breadcrumbs_df.rename(columns={'EVENT_NO_TRIP': 'trip_id', 'TIME_STAMP': 'tstamp', 'GPS_LATITUDE': 'latitude', 'GPS_LONGITUDE': 'longitude', 'SPEED': 'speed'})
@@ -206,6 +215,28 @@ def insert_db(breadcrumbs_df, trip_df):
     conn.close()
     return curr_bread, curr_trip
 
+def insert_stop_db(breadcrumbs_df, trip_df):
+    conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
+
+    db = create_engine(conn_string)
+    conn_engine = db.connect()
+
+    conn = psycopg2.connect(host="localhost", user="postgres", password = "breadcrumbs",database = "postgres")
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    # Append to the Stop table
+    breadcrumbs_df.to_sql('Stop', con=conn_engine, if_exists='append',
+          index=False)
+
+    # Get the row count for BreadCrumbs table
+    cursor.execute('SELECT count(*) from "Stop";')
+    result = cursor.fetchone()
+    curr_stop = result[0]
+
+    conn.close()
+    return curr_stop
+
 def create_db(breadcrumbs_df, trip_df):
     conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
 
@@ -240,6 +271,31 @@ def create_db(breadcrumbs_df, trip_df):
     conn.close()
     return curr_bread, curr_trip
 
+def create_stop_db(stop_df):
+    conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
+
+    db = create_engine(conn_string)
+    conn = db.connect()
+
+    # Create new Stop table
+    stop_df.to_sql('Stop', con=conn, if_exists='replace',
+          index=False)
+
+    conn = psycopg2.connect(host="localhost", user="postgres", password = "breadcrumbs",database = "postgres")
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    # Add Constraints
+    cursor.execute('ALTER TABLE "Stop" ADD CONSTRAINT "FK_trip" FOREIGN KEY("trip_id") REFERENCES "Trip"("trip_id");')
+
+    # Get the row count for Stop table
+    cursor.execute('SELECT count(*) from "stop";')
+    result = cursor.fetchone()
+    curr_stop = result[0]
+
+    conn.close()
+    return curr_stop
+
 def delete_db():
     conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
 
@@ -255,6 +311,23 @@ def delete_db():
     cursor.execute('ALTER TABLE "Trip" DROP CONSTRAINT "Trip_pkey";')
     cursor.execute('DROP TABLE "BreadCrumbs";')
     cursor.execute('DROP TABLE "Trip";')
+
+    conn.close()
+    print("DELETE Successful")
+
+def stop_delete_db():
+    conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
+
+    db = create_engine(conn_string)
+    conn = db.connect()
+
+    conn = psycopg2.connect(host="localhost", user="postgres", password = "breadcrumbs",database = "postgres")
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    # Drop constraints and then drop the tables
+    cursor.execute('ALTER TABLE "Stop" DROP CONSTRAINT "FK_trip";')
+    cursor.execute('DROP TABLE "Stop";')
 
     conn.close()
     print("DELETE Successful")
@@ -290,6 +363,29 @@ def db_rowcount():
     conn.close()
     return curr_bread, curr_trip
 
+def db_stop_rowcount():
+    conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
+
+    db = create_engine(conn_string)
+    conn = db.connect()
+
+    conn = psycopg2.connect(host="localhost", user="postgres", password = "breadcrumbs",database = "postgres")
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    insp = inspect(db)
+
+    # Check if Stop table exists then get the row count
+    if insp.has_table("Stop", schema="public"):
+        cursor.execute('SELECT count(*) from "Stop";')
+        result = cursor.fetchone()
+        curr_stop = result[0]
+    else:
+        curr_stop = 0
+
+    conn.close()
+    return curr_stop
+
 def check_tables():
     conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
 
@@ -304,6 +400,24 @@ def check_tables():
 
     # Check if BreadCrumbs table exists then get the row count
     flag = insp.has_table("BreadCrumbs", schema="public") and insp.has_table("Trip", schema="public")
+
+    conn.close()
+    return flag
+
+def check_stop_table():
+    conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
+
+    db = create_engine(conn_string)
+    conn = db.connect()
+
+    conn = psycopg2.connect(host="localhost", user="postgres", password = "breadcrumbs",database = "postgres")
+    conn.autocommit = True
+    cursor = conn.cursor()
+
+    insp = inspect(db)
+
+    # Check if Stop table exists then get the row count
+    flag = insp.has_table("Stop", schema="public")
 
     conn.close()
     return flag

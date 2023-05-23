@@ -40,20 +40,18 @@ if __name__ == "__main__":
 
     # Subscribe to topic
     timestr = time.strftime("%Y%m%d-%H%M")
-    topic = "bread-crumbs"
+    topic = "stop-event"
     consumer.subscribe([topic], on_assign=reset_offset)
     count = 0
     prev_count = count
     data = []
     count_inserts = 0
-    prev_bread = 0
-    prev_trip = 0
-    bread_count = 0
-    trip_count = 0
+    prev_stop = 0
+    stop_count = 0
 
     # If delete table option
     if args.delete:
-        data_helper.delete_db()
+        data_helper.stop_delete_db()
 
     # Poll for new messages from Kafka and print them.
     try:
@@ -68,21 +66,20 @@ if __name__ == "__main__":
                 if prev_count < count:  # Update the dataframe if more data is added
                     if len(data) != 0:
                         df = pd.DataFrame(data)    # Create Dataframe from list of json objects
-                        df = data_helper.create_dataframe(df)    # Create the new columns the dataframe
-                        data_helper.data_assertions(df)    # Test the assertions on the dataframe
-                        bread_df, trip_df = data_helper.data_splitter(df)    # Split the dataframe into two dataframes
-                        prev_bread, prev_trip = data_helper.db_rowcount()
-                        if data_helper.check_tables():
-                            bread_count, trip_count = data_helper.insert_db(bread_df, trip_df)
+                        df = data_helper.create_stop_dataframe(df)    # Create the new columns the dataframe
+                        data_helper.stop_data_assertions(df)    # Test the assertions on the dataframe
+                        stop_df = df
+                        prev_stop = data_helper.db_stop_rowcount()
+                        if data_helper.check_stop_table():
+                            stop_count = data_helper.insert_stop_db(stop_df)
                         else:
-                            bread_count, trip_count = data_helper.create_db(bread_df, trip_df)
+                            stop_count = data_helper.create_stop_db(stop_df)
                     prev_count = count
-                    bread_count = bread_count - prev_bread
-                    trip_count = trip_count - prev_trip
-                    logger.success(f"{bread_count} rows were inserted in the BreadCrumbs table. {trip_count} rows were inserted in the Trip table.")
+                    stop_count = stop_count - prev_stop
+                    logger.success(f"{stop_count} rows were inserted in the stop table.")
                     logger.success(f"Total consumed messages: {count}")
                     """with open(f"Logs/messages_{timestr}.log", mode="w", encoding="utf-8") as log:
-                        log.write(f"{bread_count} rows were inserted in the BreadCrumbs table. {trip_count} rows were inserted in the Trip table.")
+                        log.write(f"{stop_count} rows were inserted in the stop table.")
                         log.close()"""
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
