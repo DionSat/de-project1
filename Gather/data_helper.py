@@ -34,9 +34,10 @@ def create_dataframe(df):
 
 def create_stop_dataframe(df):
   df = df.mask(df == '')    # Replace blank values with NaN
-  df = df.astype({"DIRECTION":'int',
-                  "SERVICE_KEY":'char',
-                  "ROUTE_ID":'int'})    # Set type for important columns
+  df = df.astype({"direction":'int',
+                  "service_key":'str',
+                  "route_number":'int',
+                  "trip_id": 'int'})    # Set type for important columns
   # Find if uneeded columns exist. 
   return df
 
@@ -150,6 +151,8 @@ def data_assertions(df):
       print(f"Error occurred in row(s): {error_indices[0]}")
 
 def stop_data_assertions(df):
+    ...
+    #Holder for the stop data assertions
 
 def data_splitter(df):
   breadcrumbs_df = df[['EVENT_NO_TRIP', 'TIME_STAMP', 'GPS_LATITUDE', 'GPS_LONGITUDE', 'SPEED']]
@@ -215,7 +218,7 @@ def insert_db(breadcrumbs_df, trip_df):
     conn.close()
     return curr_bread, curr_trip
 
-def insert_stop_db(breadcrumbs_df, trip_df):
+def insert_stop_db(stop_df):
     conn_string = "postgresql+psycopg2://postgres:breadcrumbs@localhost:5432/postgres"
 
     db = create_engine(conn_string)
@@ -226,7 +229,7 @@ def insert_stop_db(breadcrumbs_df, trip_df):
     cursor = conn.cursor()
 
     # Append to the Stop table
-    breadcrumbs_df.to_sql('Stop', con=conn_engine, if_exists='append',
+    stop_df.to_sql('Stop', con=conn_engine, if_exists='append',
           index=False)
 
     # Get the row count for BreadCrumbs table
