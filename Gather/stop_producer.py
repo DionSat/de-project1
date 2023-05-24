@@ -66,10 +66,7 @@ def process_data(soup):
 
 if __name__ == '__main__':
     with urllib.request.urlopen("http://www.psudataeng.com:8000/getStopEvents") as f:
-        try:
-            soup = BeautifulSoup(f, 'lxml')
-        except:
-            print("No Data")
+         soup = BeautifulSoup(f, 'html.parser')
 
     data = process_data(soup)
 
