@@ -216,8 +216,56 @@ def data_assertions(df):
 
 
 def stop_data_assertions(df):
-    ...
-    # Holder for the stop data assertions
+  # Assertion #1  Direction will either be 0 or 1
+  df1 = pd.DataFrame()
+  df1['direction'] = df['direction'].copy(deep=True)
+  try:
+      assert {0, 1}.issuperset(df['direction']), f"Some directions are not 0 or 1"    #Check if direction column has values of 0 or 1 only
+  except AssertionError as error:
+      error_message = f"AssertionError: {error}"
+      error_indices =df1[(df1['direction'] != 0) & (df1['direction'] != 1)].index.tolist()
+      print(error_message)
+      print(f"Error occurred in row(s): {error_indices[0]}")
+  # Assertion #2 Service key should be the same for the entire day.
+  df2 = pd.DataFrame()
+  df2[['service_key']] = df[['service_key']].copy(deep=True)
+  try:
+      assert not df2[df2['service_key'] != df2['service_key'][0]].values.any(), f"Some trips have different service keys"    #Check if all the values in the service key are the same
+  except AssertionError as error:
+      error_message = f"AssertionError: {error}"
+      error_indices = df2[(df2['service_key'] != df2['service_key'][0])].index.tolist()
+      print(error_message)
+      print(f"Error occurred in row(s): {error_indices[0]}")
+  # Assertion #3 A trip will go the same direction the entire time.
+  df3 = pd.DataFrame()
+  df3[['trip_id', 'direction']] = df[['trip_id', 'direction']].copy(deep=True)
+  try:
+      assert df3.groupby("trip_id").direction.nunique().eq(1).any(), f"Some trip are going in different directions"    #Check if the direction is the same for all trips
+  except AssertionError as error:
+      error_message = f"AssertionError: {error}"
+      error_indices = df3.groupby("trip_id").direction.nunique().eq(0).index.tolist()
+      print(error_message)
+      print(f"Error occurred in row(s): {error_indices[0]}")
+  # Assertion #4 A route id won’t change during a trip.
+  df4 = pd.DataFrame()
+  df4[['trip_id', 'route_number']] = df[['trip_id', 'route_number']].copy(deep=True)
+  try:
+      assert df4.groupby("trip_id").route_number.nunique().eq(1).any(), f"Some trips are changing routes"    #Check if the route is the same for all trips
+  except AssertionError as error:
+      error_message = f"AssertionError: {error}"
+      error_indices = df4.groupby("trip_id").direction.nunique().eq(0).index.tolist()
+      print(error_message)
+      print(f"Error occurred in row(s): {error_indices[0]}")
+  # Assertion #5 The route id needs to be greater than 0
+  df5 = pd.DataFrame()
+  df5[['route_number']] = df[['route_number']].copy(deep=True)
+  try:
+      assert df5[(df5['route_number'].gt(0))].values.any(), f"Some routes are less than 0"
+  except AssertionError as error:
+      error_message = f"AssertionError: {error}"
+      error_indices = df5[df5['route_number'].gt(0)].index.tolist()
+      print(error_message)
+      print(f"Error occurred in row(s): {error_indices[0]}")
 
 
 def data_splitter(df):

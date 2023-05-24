@@ -70,7 +70,6 @@ if __name__ == "__main__":
                         data_helper.stop_data_assertions(df)    # Test the assertions on the dataframe
                         df = data_helper.stop_data_process(df)
                         stop_df = df
-                        print(stop_df)
                         prev_stop = data_helper.db_stop_rowcount()
                         if data_helper.check_stop_table():
                             stop_count = data_helper.stop_insert_db(stop_df)
