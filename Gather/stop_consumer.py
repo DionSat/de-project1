@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     # Poll for new messages from Kafka and print them.
     try:
-        logger.add(f"Logs/output_{timestr}.log")
+        logger.add(f"Logs/output_stop_{timestr}.log")
         while True:
             msg = consumer.poll(1.0)
             if msg is None:
@@ -68,19 +68,18 @@ if __name__ == "__main__":
                         df = pd.DataFrame(data)    # Create Dataframe from list of json objects
                         df = data_helper.create_stop_dataframe(df)    # Create the new columns the dataframe
                         data_helper.stop_data_assertions(df)    # Test the assertions on the dataframe
+                        df = data_helper.stop_data_process(df)
                         stop_df = df
+                        print(stop_df)
                         prev_stop = data_helper.db_stop_rowcount()
                         if data_helper.check_stop_table():
-                            stop_count = data_helper.insert_stop_db(stop_df)
+                            stop_count = data_helper.stop_insert_db(stop_df)
                         else:
                             stop_count = data_helper.create_stop_db(stop_df)
                     prev_count = count
                     stop_count = stop_count - prev_stop
                     logger.success(f"{stop_count} rows were inserted in the stop table.")
                     logger.success(f"Total consumed messages: {count}")
-                    """with open(f"Logs/messages_{timestr}.log", mode="w", encoding="utf-8") as log:
-                        log.write(f"{stop_count} rows were inserted in the stop table.")
-                        log.close()"""
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
             else:
