@@ -284,9 +284,7 @@ def data_splitter(df):
 
     trip_df = df[["EVENT_NO_TRIP", "VEHICLE_ID"]].copy(deep=True)
     trip_df = trip_df.drop_duplicates(subset=["EVENT_NO_TRIP"])
-    trip_df["route_id"] = np.round(
-        trip_df["EVENT_NO_TRIP"] + random.randrange(10, 30), 3
-    )
+    trip_df["route_id"] = 0
     trip_df["service_key"] = "A"
     trip_df["direction"] = np.random.choice([0, 1])
     trip_df = trip_df.rename(
