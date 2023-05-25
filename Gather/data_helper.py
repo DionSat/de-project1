@@ -483,8 +483,8 @@ def delete_db():
     cursor = conn.cursor()
 
     # Drop constraints and then drop the tables
-    cursor.execute('ALTER TABLE "BreadCrumbs" DROP CONSTRAINT "FK_trip";')
-    cursor.execute('ALTER TABLE "Stop" DROP CONSTRAINT "FK_trip";')
+    #cursor.execute('ALTER TABLE "BreadCrumbs" DROP CONSTRAINT "FK_trip";')
+    #cursor.execute('ALTER TABLE "Stop" DROP CONSTRAINT "FK_trip";')
     cursor.execute('ALTER TABLE "Trip" DROP CONSTRAINT "Trip_pkey";')
     cursor.execute('DROP TABLE "BreadCrumbs";')
     cursor.execute('DROP TABLE "Trip";')

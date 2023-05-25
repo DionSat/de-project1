@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     # If delete table option
     if args.delete:
-        data_helper.stop_delete_db()
+        data_helper.delete_db()
 
     # Poll for new messages from Kafka and print them.
     try:
